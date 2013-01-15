@@ -4,6 +4,7 @@
 *.arn
 *.zip
 *.dcu
+*.tmp
 *.~*~
 *.local
 *.identcache
