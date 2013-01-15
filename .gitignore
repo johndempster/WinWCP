@@ -2,6 +2,7 @@
 *.cmd
 *.gxc
 *.arn
+*.zip
 *.dcu
 *.~*~
 *.local
