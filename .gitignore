@@ -1,0 +1,22 @@
+*.arm
+*.cmd
+*.gxc
+*.arn
+*.dcu
+*.~*~
+*.local
+*.identcache
+__history
+*.drc
+*.map
+*.exe
+*.dll
+./bin/*
+./temp/*.*
+./vprot/*.*
+./data/*.*
+./HelpSmith Files/*.*
+./WinWCP Setup Project (licensed)/*.*
+
+/data/
+/vprot/
