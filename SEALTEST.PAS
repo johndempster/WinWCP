@@ -166,6 +166,15 @@ type
     ChannelsGrp: TGroupBox;
     cbNumChannels: TComboBox;
     Label10: TLabel;
+    CellRTab: TTabSheet;
+    Label18: TLabel;
+    Label19: TLabel;
+    Label21: TLabel;
+    edRAccess: TValidatedEdit;
+    edRMembrane: TValidatedEdit;
+    edCMembrane1: TValidatedEdit;
+    edSmoothingFactor: TValidatedEdit;
+    Label22: TLabel;
     procedure TimerTimer(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure edHoldingVoltage1KeyPress(Sender: TObject; var Key: Char);
@@ -195,6 +204,7 @@ type
     procedure rbVclampClick(Sender: TObject);
     procedure rbIclampClick(Sender: TObject);
     procedure cbNumChannelsChange(Sender: TObject);
+    procedure edSmoothingFactorKeyPress(Sender: TObject; var Key: Char);
   private
     { Private declarations }
   ADC : PSmallIntArray ;
@@ -327,12 +337,6 @@ begin
      if Main.SESLabIO.ADCActive then Main.SESLabIO.ADCStop ;
      if Main.SESLabIO.DACActive then Main.SESLabIO.DACStop ;
 
-     // Make the currently selected A/D voltage range compatible
-     //  with the laboratory interface hardware.
- //    Main.SESLabIO.ADCVoltageRangeIndex := Min( Settings.ADCVoltageRangeIndex,
- //                                               Main.SESLabIO.ADCNumVoltageRanges-1) ;
-
-
      // Amplifier
      cbAmplifier.Clear ;
      for i := 0 to MaxAmplifiers-1 do begin
@@ -363,6 +367,7 @@ begin
 
      // Ensure smoothing factor is valid
      Settings.SealTest.SmoothingFactor := Min(Max(Settings.SealTest.SmoothingFactor,0.1),1.0) ;
+     edSmoothingFactor.Value := 1.0/Settings.SealTest.SmoothingFactor ;
 
      scDisplay.xMin := 0 ;
      scDisplay.xMax := NumTestSamples-1  ;
@@ -1075,9 +1080,13 @@ begin
      if GAccess > 1E-14 then begin
         if ResetReadout then edGAccess.Value := GAccess ;
         edGAccess.Value := Settings.SealTest.SmoothingFactor*GAccess +
-                           (1.0 - Settings.SealTest.SmoothingFactor)*edGAccess.Value
+                           (1.0 - Settings.SealTest.SmoothingFactor)*edGAccess.Value ;
+        edRAccess.Value := 1.0 / edGAccess.Value ;
         end
-     else edGAccess.Value := 0.0 ;
+     else begin
+        edGAccess.Value := 0.0 ;
+        edRAccess.Value := 1E30 ;
+        end ;
      if edGAccess.Value < 1E-14 then Exit ;
      Main.Ga := edGAccess.Value ;
 
@@ -1087,8 +1096,12 @@ begin
         if ResetReadout then edGmembrane.Value := GMembrane ;
         edGmembrane.Value := Settings.SealTest.SmoothingFactor*GMembrane +
                              (1.0 - Settings.SealTest.SmoothingFactor)*edGmembrane.Value ;
+        edRmembrane.Value := 1 / edGmembrane.Value ;
         end
-     else edGmembrane.Value := 0.0 ;
+     else begin
+        edGmembrane.Value := 0.0 ;
+        edRmembrane.Value := 1E30 ;
+        end ;
      if edGmembrane.Value < 1E-14 then Exit ;
      Main.Gm := edGmembrane.Value ;
 
@@ -1099,8 +1112,12 @@ begin
         if ResetReadout then EdCmembrane.Value := Capacity ;
         EdCmembrane.Value := Settings.SealTest.SmoothingFactor*Capacity +
                              (1.0 - Settings.SealTest.SmoothingFactor)*EdCmembrane.Value ;
+        EdCmembrane1.Value := EdCmembrane.Value ;
         end
-     else EdCmembrane.Value := 0.0 ;
+     else begin
+        EdCmembrane.Value := 0.0 ;
+        EdCmembrane1.Value := 0.0 ;
+        end ;
      Main.Cm := EdCmembrane.Value ;
 
      except
@@ -1596,6 +1613,7 @@ procedure TSealTestFrm.SetSmoothingFactor( Value : Single ) ;
 // -----------------------------------
 begin
      Settings.SealTest.SmoothingFactor := Min(Max(Value,0.1),1.0) ;
+     edSmoothingFactor.Value := 1.0 / Max(Settings.SealTest.SmoothingFactor,0.1) ;
      end ;
 
 
@@ -1685,6 +1703,14 @@ procedure TSealTestFrm.cbNumChannelsChange(Sender: TObject);
 begin
      NumTestChannels := Max( cbNumChannels.ItemIndex + 1,1) ;
      UpdateChannelLists ;
+     end;
+
+procedure TSealTestFrm.edSmoothingFactorKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+    if Key = #13 then begin
+       Settings.SealTest.SmoothingFactor := 1.0 / edSmoothingFactor.Value
+       end ;
      end;
 
 end.

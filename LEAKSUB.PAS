@@ -24,7 +24,8 @@ unit Leaksub;
   02.12.06 .. Averaging of leak current when ILeak only subtraction in use
               now works correctly leading to lower noise / more accuration subtraction
               ILeak mode button only now disabled in Group leak subtraction mode
-  14.08.07 .. ILeak only mode no longer disabled whe cursor moved            
+  14.08.07 .. ILeak only mode no longer disabled whe cursor moved
+  16.01.13 .. Display cursor update loop which occurred when more than 2 channels in data file fixed.
   ===================================================================}
 interface
 
@@ -225,7 +226,7 @@ begin
          scDisplay.ChanOffsets[ch] := Channel[ch].ChannelOffset ;
          scDisplay.ChanUnits[ch] := Channel[Ch].ADCUnits ;
          scDisplay.ChanName[ch] := Channel[Ch].ADCName ;
-         scDisplay.ChanScale[ch] := Channel[ch].ADCScale ;         
+         scDisplay.ChanScale[ch] := Channel[ch].ADCScale ;
          // If the number of channels has changed, zoom out display
          if OldNumChannels <> FH.NumChannels then begin
             Channel[ch].yMin := Main.SESLabIO.ADCMinValue ;
@@ -826,8 +827,8 @@ procedure TLeakSubFrm.scDisplayCursorChange(Sender: TObject);
 var
    ch : Integer ;
 begin
-
-     for ch := 0 to scDisplay.NumChannels-1 do if Channel[ch].InUse then begin
+     
+     for ch := 0 to scDisplay.NumChannels-1 do if scDisplay.ChanVisible[ch] then begin
          Channel[Ch].yMin := scDisplay.YMin[Ch] ;
          Channel[Ch].yMax := scDisplay.YMax[Ch] ;
          // Fix baseline if required

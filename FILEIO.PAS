@@ -60,6 +60,10 @@ unit Fileio;
   20.07.11 ... 'PLNAME=', Settings.ProtocolListFileName added to INI file
   22.09.11 ... 'ADCVRI=', Settings.ADCVoltageRangeIndex removed from INI file
   29.12.12 ... fHDR.NumZeroAvg now forced to be at least 1.
+  16.01.13 ... char & pchar replaced with PANSIChar & ANSIChar
+               GetRecordHeaderOnly() Record type now checked and set to TEST
+               if entry not a valid record type
+               'STSMF=', Settings.SealTest.SmoothingFactor added to INI file
   }
 
 
@@ -236,8 +240,8 @@ procedure GetHeader(
 const
      NumBytesPerSector = 512 ;
 var
-   Header : array[1..MaxBytesInFileHeader] of char ;
-   RecordStatusArray : array[0..3] of char ;
+   Header : array[1..MaxBytesInFileHeader] of ANSIchar ;
+   RecordStatusArray : array[0..3] of ANSIchar ;
    RecordStatus : string ;
    i,NumBytesInFile,NumRecords,FilePointer,ch,RecordCounter : Integer ;
    Done : Boolean ;
@@ -431,7 +435,7 @@ procedure LoadInitializationFile( const IniFileName : string ) ;
   e.g. the name of the last data file used
   ---------------------------------------------------------}
 var
-   Header : array[1..INIFileSize] of char ;
+   Header : array[1..INIFileSize] of ANSIchar ;
    i,ch,IniFileHandle : Integer ;
    AmpType, GainChannel, ModeChannel : Integer ;
    Value,fValue : Single ;
@@ -579,6 +583,7 @@ begin
            ReadInt( Header, 'STDSC=', Settings.SealTest.DisplayScale ) ;
            ReadLogical( Header, 'STASC=', Settings.SealTest.AutoScale ) ;
            ReadLogical( Header, 'STFRU=', Settings.SealTest.FreeRun ) ;
+           ReadFloat( Header, 'STSMF=', Settings.SealTest.SmoothingFactor ) ;
 
            { Note. For compatibility with older Strathclyde
              programs 'ADCVoltageRange' is written to file
@@ -767,7 +772,7 @@ procedure SaveInitializationFile( const IniFileName : string ) ;
 type
     TKeyword = string[6] ;
 var
-   Header : array[1..INIFileSize] of char ;
+   Header : array[1..INIFileSize] of ANSIchar ;
    i,ch : Integer ;
    IniFileHandle : Integer ;
 begin
@@ -851,6 +856,7 @@ begin
      AppendInt( Header, 'STDSC=', Settings.SealTest.DisplayScale ) ;
      AppendLogical( Header, 'STASC=', Settings.SealTest.AutoScale ) ;
      AppendLogical( Header, 'STFRU=', Settings.SealTest.FreeRun ) ;
+     AppendFloat( Header, 'STSMF=', Settings.SealTest.SmoothingFactor ) ;
 
      AppendInt( Header, 'NC=', RawFH.NumChannels ) ;
 
@@ -1053,9 +1059,9 @@ procedure PutRecordHeaderOnly(
   Write a WCP format digital signal record header to file
   -------------------------------------------------------}
 var
-   cRecID : Array[0..MaxRecordIdentChars] of char ;
-   cStatus : Array[0..MaxRecordStatusChars] of char ;
-   cRecType : Array[0..MaxRecordTypeChars] of char ;
+   cRecID : Array[0..MaxRecordIdentChars] of ANSIchar ;
+   cStatus : Array[0..MaxRecordStatusChars] of ANSIchar ;
+   cRecType : Array[0..MaxRecordTypeChars] of ANSIchar ;
 begin
 
      // Set file and record header sizes if no records in file
@@ -1085,11 +1091,11 @@ begin
                0 ) ;
 
      // Record ACCEPTED/REJECTED status string (8 chars)
-     StrCopy(cStatus,PChar(LeftStr(RH.Status,MaxRecordStatusChars))) ;
+     StrCopy(cStatus,PANSIChar(LeftStr(RH.Status,MaxRecordStatusChars))) ;
      FileWrite( FHDR.FileHandle, cStatus, MaxRecordStatusChars ) ;
 
      // Record type string (4 chars)
-     StrCopy(cRecType,PChar(LeftStr(RH.RecType,MaxRecordTypeChars))) ;
+     StrCopy(cRecType,PANSIChar(LeftStr(RH.RecType,MaxRecordTypeChars))) ;
      FileWrite( FHDR.FileHandle, cRecType, MaxRecordTypeChars ) ;
 
      FileWrite( FHDR.FileHandle, rH.Number, sizeof(rH.Number) ) ;
@@ -1100,7 +1106,7 @@ begin
      FileWrite(FHDR.FileHandle,rH.ADCVoltageRange,sizeof(single)*FHDR.NumChannels) ;
 
      { Write record ident line }
-     StrCopy(cRecID,PChar(LeftStr(RH.Ident,MaxRecordIdentChars))) ;
+     StrCopy(cRecID,PANSIChar(LeftStr(RH.Ident,MaxRecordIdentChars))) ;
      FileWrite( FHDR.FileHandle, cRecID, MaxRecordIdentChars ) ;
 
      { Write Analysis variables }
@@ -1237,10 +1243,11 @@ procedure GetRecordHeaderOnly(
   Read a WCP format digital signal record header from file
   --------------------------------------------------------}
 var
-   ch : Integer ;
-   cRecID : array[0..MaxRecordIdentChars-1] of char ;
-   cStatus : Array[0..MaxRecordStatusChars-1] of char ;
-   cRecType : Array[0..MaxRecordTypeChars-1] of char ;
+   ch,i : Integer ;
+   cRecID : array[0..MaxRecordIdentChars-1] of ANSIchar ;
+   cStatus : Array[0..MaxRecordStatusChars-1] of ANSIchar ;
+   cRecType : Array[0..MaxRecordTypeChars-1] of ANSIchar ;
+   OK : Boolean ;
 begin
 
      fHDR.RecordNum := RecordNum ;
@@ -1260,6 +1267,11 @@ begin
 
      FileRead( FHDR.FileHandle, cRecType, SizeOf(cRecType) ) ;
      rH.RecType := cRecType ;
+     // Ensure valid record type
+     OK := False ;
+     for i := 0 to RecordTypes.Count-1 do
+         if RecordTypes.Strings[i] = UpperCase(rH.RecType) then OK := True ;
+     if not OK then rH.RecType := 'TEST' ;
 
      FileRead( FHDR.FileHandle, rH.Number, sizeof(rH.Number) ) ;
      FileRead( FHDR.FileHandle, rH.Time, sizeof(rH.Time) ) ;
@@ -1314,9 +1326,9 @@ const
     MaxVariablesWCPV8 = 14 ;
 var
    i,ch : Integer ;
-   cRecID : array[0..MaxRecordIdentChars-1] of char ;
-   cStatus : Array[0..MaxRecordStatusChars-1] of char ;
-   cRecType : Array[0..MaxRecordTypeChars-1] of char ;
+   cRecID : array[0..MaxRecordIdentChars-1] of ANSIchar ;
+   cStatus : Array[0..MaxRecordStatusChars-1] of ANSIchar ;
+   cRecType : Array[0..MaxRecordTypeChars-1] of ANSIchar ;
 
 begin
 

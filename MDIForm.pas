@@ -533,6 +533,8 @@ unit MDIForm;
    V4.5.4 18/.09.12 .. Default command voltage scaling factor of EPC-800 now set to 0.1 (rather than 0.02)
                        Micro 1401 Mk3 now specifically identified.
   V4.5.5 27/11/12 .... CED Micro 1401 now correctly identified and A/D host buffer reduced to 32768
+  V4.5.6 15/01/13 .... LeakSub.pas Display cursor update loop which occurred when more than 2 channels in data file fixed.
+                       fileio.pas GetRecordHeaderOnly() Record type now checked and set to TEST if entry not a valid record type
   =======================================================================}
 
 
@@ -762,7 +764,7 @@ var
    FileName : String ;
 begin
 
-       ProgVersion := 'V4.5.5' ;
+       ProgVersion := 'V4.5.6' ;
       Caption := 'WinWCP : Strathclyde Electrophysiology Software ' + ProgVersion ;
 
       { Get directory which contains WinWCP program }
@@ -915,7 +917,7 @@ begin
      Settings.SealTest.VoltageChannel := 1 ;
      Settings.SealTest.AutoScale := True ;
      Settings.SealTest.DisplayScale := 1 ;
-     Settings.SealTest.SmoothingFactor := 0.2 ;
+     Settings.SealTest.SmoothingFactor := 1.0 ;
      
      { Set flag indicating this is the first sweep, to force an autoscale }
      Settings.SealTest.FirstSweep := True ;
