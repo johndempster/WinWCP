@@ -535,6 +535,8 @@ unit MDIForm;
   V4.5.5 27/11/12 .... CED Micro 1401 now correctly identified and A/D host buffer reduced to 32768
   V4.5.6 15/01/13 .... LeakSub.pas Display cursor update loop which occurred when more than 2 channels in data file fixed.
                        fileio.pas GetRecordHeaderOnly() Record type now checked and set to TEST if entry not a valid record type
+  V4.5.7 28/01/13 .... "A/D input mode not supported by this device" error fixed for PCI-615X cards by
+                       using DAQmx_Val_PseudoDiff mode only for PCI-611X cards 
   =======================================================================}
 
 
@@ -764,7 +766,7 @@ var
    FileName : String ;
 begin
 
-       ProgVersion := 'V4.5.6' ;
+       ProgVersion := 'V4.5.7' ;
       Caption := 'WinWCP : Strathclyde Electrophysiology Software ' + ProgVersion ;
 
       { Get directory which contains WinWCP program }

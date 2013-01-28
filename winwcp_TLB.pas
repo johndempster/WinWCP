@@ -12,7 +12,7 @@ unit winwcp_TLB;
 // ************************************************************************ //
 
 // PASTLWTR : 1.2
-// File generated on 16/01/2013 11:08:25 from Type Library described below.
+// File generated on 28/01/2013 11:08:47 from Type Library described below.
 
 // ************************************************************************  //
 // Type Lib: F:\Delphi Projects\WinWCP\winwcp.tlb (1)
