@@ -65,8 +65,6 @@ unit Fileio;
                if entry not a valid record type
                'STSMF=', Settings.SealTest.SmoothingFactor added to INI file
   18.02.13 ... GetRecordHeaderOnly() Corrupted record headers now filled with default values
-               fHDR.NumBytesPerRecord no longer estimated by locating start of 2nd record header
-               to allow loading of files with corrupted analysis blocks
                
   }
 
@@ -160,8 +158,10 @@ var
 begin
 
      // Set file header size if no records stored
-     fHDR.NumBytesInHeader := NumBytesInFileHeader(fHDR.NumChannels) ;
-     fHDR.NumAnalysisBytesPerRecord := NumAnalysisBytesPerRecord(fHDR.NumChannels) ;
+     //if fHDR.NumRecords <= 1 then begin
+        fHDR.NumBytesInHeader := NumBytesInFileHeader(fHDR.NumChannels) ;
+        fHDR.NumAnalysisBytesPerRecord := NumAnalysisBytesPerRecord(fHDR.NumChannels) ;
+     //   end ;
 
      { Initialise empty header buffer with zero bytes }
      for i := 1 to sizeof(Header) do Header[i] := chr(0) ;
@@ -272,8 +272,10 @@ begin
          CopyArrayToString(RecordStatus,RecordStatusArray) ;
          //outputdebugstring(pchar(format('%d %s',[FilePointer,RecordStatus])));
          { Is it a record status field }
-         if ANSIContainsText(RecordStatus,'acce') or
-            ANSIContainsText(RecordStatus,'reje') then begin
+         if (RecordStatus = 'ACCE') or
+            (RecordStatus = 'REJE') or
+            (RecordStatus = 'acce') or
+            (RecordStatus = 'reje') then begin
             Inc(RecordCounter) ;
             if RecordCounter = 1 then begin
                fHDR.NumBytesInHeader := FilePointer ;
@@ -316,7 +318,16 @@ begin
 
           ReadInt( Header, 'NBD=', fHDR.NumDataBytesPerRecord ) ;
           fHDR.NumDataBytesPerRecord := fHDR.NumDataBytesPerRecord*NumBytesPerSector ;
-          fHDR.NumBytesPerRecord := fHDR.NumDataBytesPerRecord + fHDR.NumAnalysisBytesPerRecord ;
+          { Compute other record size parameters, handling situation where
+            overall record size is not known }
+  //        if false{fHDR.NumBytesPerRecord > 0} then begin
+  //           fHDR.NumAnalysisBytesPerRecord := fHDR.NumBytesPerRecord
+  //                                             - fHDR.NumDataBytesPerRecord ;
+ //            end
+  //        else begin
+             fHDR.NumBytesPerRecord := fHDR.NumDataBytesPerRecord
+                                       + fHDR.NumAnalysisBytesPerRecord ;
+    //         end ;
 
           fHDR.NumSamplesPerRecord := fHDR.NumDataBytesPerRecord div 2 ;
           OldValue := fHDR.NumSamples ;
@@ -1307,13 +1318,12 @@ begin
 
         end
      else begin
-        // Invalid analysis block - Fill record with default values
+        // Fill record with default values
         rH.Status := 'ACCE' ;
         rH.RecType := 'TEST' ;
         rH.Number := RecordNum ;
         rH.dt := fHDR.dt ;
         rH.Time := (fHDR.NumSamples*rH.dt)*(rH.Number-1.0) ;
-        rH.Ident := '' ;
         for Ch := 0 to FHDR.NumChannels-1 do begin
             RH.ADCVoltageRange[ch] := fHDR.ADCVoltageRange ;
             Channel[ch].ADCScale := CalibFactorToADCScale( RH, ch ) ;
@@ -1327,6 +1337,8 @@ begin
         PutRecordHeaderOnly( fHDR, RH, RecordNum ) ;
 
         end ;
+
+    // iStart := FileSeek(FHDR.FileHandle, 0, 1) - iStart ;
 
      end ;
 
