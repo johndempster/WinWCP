@@ -538,7 +538,6 @@ unit MDIForm;
   V4.5.7 28/01/13 .... "A/D input mode not supported by this device" error fixed for PCI-615X cards by
                        using DAQmx_Val_PseudoDiff mode only for PCI-611X cards
   V4.5.8 22/02/13 .... Digidata 1440 support updated. Max. record size increased to 8 MSample.
-                       Corrupted WCP data file record analysis blocks now restored with default value (fileio.pas)
   =======================================================================}
 
 
@@ -3495,5 +3494,10 @@ begin
 
      end;
 
-end.
+
+end. procedure TMain.o(Sender: TObject);
+begin
+
+end;
+
 

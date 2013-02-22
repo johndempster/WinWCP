@@ -2370,12 +2370,13 @@ begin
      edNumChannels.Value := Main.SESLabIO.ADCNumChannels ;
 
      // Compute sampling interval
-     Main.SESLabIO.ADCSamplingInterval := edRecordDuration.Value / Settings.NumSamples ;
+     Main.SESLabIO.ADCSamplingInterval := edRecordDuration.Value /
+                                          Main.SESLabIO.ADCNumSamples ;
 
      // Get validated in interval back from interface
      edSamplingInterval.Value := Main.SESLabIO.ADCSamplingInterval ;
 
-     edRecordDuration.Value := edSamplingInterval.Value*Settings.NumSamples ;
+     edRecordDuration.Value := edSamplingInterval.Value*edNumSamples.Value ;
 
      end ;
 
